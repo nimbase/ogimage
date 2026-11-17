@@ -10,4 +10,4 @@ srcDir        = "src"
 # Dependencies
 
 requires "nim >= 2.2.0"
-requires "og:nimbase/nvg"
+requires "gh:nimbase/nvg"
