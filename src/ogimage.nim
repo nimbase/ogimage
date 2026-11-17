@@ -11,11 +11,13 @@
 ## ```
 
 import ./ogimage/types
+import ./ogimage/spans
 import ./ogimage/theme
 import ./ogimage/fonts
 import ./ogimage/render
 
 export types
+export spans
 export theme
 export fonts
 export render

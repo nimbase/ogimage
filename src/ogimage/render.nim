@@ -5,6 +5,7 @@
 ## Text never auto-shrinks; overflow trims with "..." instead.
 
 import std/math
+import std/strutils
 import std/unicode
 import nvg
 import ./types
@@ -178,10 +179,17 @@ proc drawBackground(c: Canvas, og: OgImage, th: OgTheme) =
         if id != 0:
           drawImageFit(c, id, W, H, og.background.fit,
             og.background.pos)
+          # Scrim between photo and text: `#000` at overlayAlpha
+          # fading to transparent along overlayAngleDeg, so copy
+          # stays legible over busy photos.
+          let e = bgEndpoints(og.width, og.height,
+            og.background.overlayAngleDeg)
           c.beginPath()
           c.rect(0, 0, W, H)
-          c.setFillColor(og.background.tint.withAlpha(
-            og.background.overlayAlpha))
+          c.setFillPaint(c.linearGradient(e.sx, e.sy, e.ex, e.ey,
+            og.background.tint.withAlpha(
+              og.background.overlayAlpha),
+            og.background.tint.withAlpha(0.0)))
           c.fill()
           return
       # Undecodable image falls through to the preset default.
@@ -239,6 +247,82 @@ proc drawPlaceholder(c: Canvas, fontId: int, x, y, w, h,
   discard c.fillTextBox(x, y, label, TextBoxOpts(maxW: w, boxH: h,
     ha: thaCenter, va: tvaMiddle, wrap: false, overflow: toVisible,
     fit: tfNone, maxLines: 1, ellipsis: ""))
+
+proc ellipsizeToLines*(c: Canvas, s: string,
+    o: TextBoxOpts): string
+
+proc segBoxOpts(w, boxH: float64, ha: TextHAlign,
+    maxLines: int): TextBoxOpts =
+  TextBoxOpts(maxW: w, boxH: boxH, ha: ha, va: tvaTop, wrap: true,
+    overflow: toEllipsis, fit: tfNone, maxLines: maxLines,
+    ellipsis: "...")
+
+proc drawSegBackgrounds(c: Canvas, base: TextFont, sizePx: float64,
+    text: string, spans: seq[TextSpan],
+    bgs: seq[tuple[first, last: int, color: Color]], lineH: float64,
+    o: TextBoxOpts, x, y: float64) =
+  ## Tight per-line highlight rects behind `bgs` ink ranges. Layout
+  ## glyphs are already alignment-final, so layout space maps to
+  ## the box with the same shift `paintBox` uses.
+  if bgs.len == 0 or base == nil:
+    return
+  let bl = layoutBoxSpans(base, sizePx, text, spans, 0.0, lineH, 0.0, o)
+  let padX = bl.sizePx * 0.12
+  let padY = bl.sizePx * 0.08
+  for i in 0 ..< bl.lay.lines.len:
+    let line = bl.lay.lines[i]
+    for (first, last, color) in bgs:
+      var x0 = Inf
+      var x1 = NegInf
+      var y0 = Inf
+      var y1 = NegInf
+      for g in line.glyphs:
+        if not g.hasInk or g.boxKind != sbkNone:
+          continue
+        if g.cluster >= uint32(first) and g.cluster < uint32(last):
+          x0 = min(x0, g.x0)
+          x1 = max(x1, g.x1)
+          y0 = min(y0, g.y0)
+          y1 = max(y1, g.y1)
+      if x1 > x0:
+        let oy = y + bl.shift + bl.lay.lineY(i)
+        c.beginPath()
+        c.rect(x + x0 - padX, oy + y0 - padY,
+          (x1 - x0) + padX * 2.0, (y1 - y0) + padY * 2.0)
+        c.setFillColor(color)
+        c.fill()
+
+proc drawSegText(c: Canvas, og: OgImage, th: OgTheme,
+    segs: seq[OgSeg], baseId: int, basePath: string, baseIdx: int,
+    ink: Color, sizePx, lineH, x, y, w, boxH: float64,
+    maxLines: int): float64 =
+  ## Rich-text twin of the plain title/description blocks: per-run
+  ## faces, fg colors and link styling via spans, bg highlights
+  ## behind, same fixed-size ellipsis clamping. Bold metrics run a
+  ## touch wider than the base face, so edge-case line counts may
+  ## differ by one from the plain path.
+  let strongF = loadFace(og.fontStrongPath, og.strongFaceIndex)
+  let emF = loadFace(og.fontEmPath, og.emFaceIndex)
+  let o = segBoxOpts(w, boxH, th.align, maxLines)
+  c.setFontFaceId(baseId)
+  c.setFontSize(sizePx)
+  c.setLineHeight(lineH)
+  c.setTextAlign(th.align, tvaTop)
+  c.setFillColor(ink)
+  var cur = segs
+  var (text, spans, bgs) = toTextSpans(cur, strongF, emF, th.accent)
+  if maxLines > 0 and
+      c.measureSpanBox(0, 0, text, spans, o).lineCount > maxLines:
+    let trimmed = c.ellipsizeToLines(text, o)
+    var cutBytes = trimmed.len
+    if trimmed.endsWith(o.ellipsis):
+      cutBytes = trimmed.len - o.ellipsis.len
+    cur = trimSegs(cur, cutBytes)
+    (text, spans, bgs) = toTextSpans(cur, strongF, emF, th.accent)
+  c.drawSegBackgrounds(loadFace(basePath, baseIdx), sizePx, text,
+    spans, bgs, lineH, o, x, y)
+  c.setFillColor(ink) # highlights reuse the state fill; restore ink
+  c.fillSpanBox(x, y, text, spans, o)
 
 proc drawLogo(c: Canvas, og: OgImage, th: OgTheme, fontId: int) =
   if og.content.logoPath == "":
@@ -485,7 +569,12 @@ proc render*(og: OgImage): Canvas =
       c.drawPlaceholder(bodyId, photoX, titleY, photoSize,
         photoSize, photoRadius)
 
-  if og.content.title != "":
+  if og.content.titleSegs.len > 0:
+    discard c.drawSegText(og, th, og.content.titleSegs, titleId,
+      resolveTitlePath(og), og.titleFaceIndex, th.titleColor,
+      th.titleSize, 1.12, titleX, titleY, titleW, 260.0,
+      th.titleMaxLines)
+  elif og.content.title != "":
     c.setFontFaceId(titleId)
     c.setFontSize(th.titleSize)
     c.setLineHeight(1.12)
@@ -496,7 +585,13 @@ proc render*(og: OgImage): Canvas =
     discard c.fillTextBox(titleX, titleY, title,
       titleOpts(th, titleW))
 
-  if og.content.description != "":
+  if og.content.descSegs.len > 0:
+    let bodyFace = if og.fontBodyPath != "": og.bodyFaceIndex
+      else: og.titleFaceIndex
+    discard c.drawSegText(og, th, og.content.descSegs, bodyId,
+      resolveBodyPath(og), bodyFace, th.descColor, th.descSize, 1.4,
+      contentX, titleY + 272.0, contentW, 100.0, th.descMaxLines)
+  elif og.content.description != "":
     c.setFontFaceId(bodyId)
     c.setFontSize(th.descSize)
     c.setLineHeight(1.4)

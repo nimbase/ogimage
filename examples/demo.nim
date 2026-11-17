@@ -117,6 +117,27 @@ proc longSample(preset: OgPreset, dataDir: string): OgImage =
   if fileExists(regular):
     result.fontBodyPath = regular
 
+proc richSample(dataDir: string): OgImage =
+  ## Segment-styled copy: strong/em runs, fg accent, a link and a
+  ## marker highlight, all without markup.
+  result = newOgImage(
+    @[plain("Ship "), strong(fg("faster", rgb(56, 189, 248))),
+      plain(" with pure Nim")],
+    @[plain("Fixed sizes, "), em(plain("ellipsis trimming")),
+      plain(", and "), link(plain("named presets"),
+        "https://github.com/nimbase/ogimage"),
+      plain(" with "),
+      bg(fg(plain("zero native deps"), rgb(15, 23, 42)),
+        rgb(253, 224, 71)), plain(".")],
+    opDark)
+  result.content.badge = "nimbase"
+  result.applyRepo(dataDir)
+  result.applyFonts(dataDir)
+  result.fontStrongPath = dataDir / boldFile
+  let italic = dataDir / "Roboto-Italic.ttf"
+  if fileExists(italic):
+    result.fontEmPath = italic
+
 proc main(outDir, dataDir: string) =
   createDir(outDir)
   let photo = dataDir / photoFile
@@ -141,6 +162,9 @@ proc main(outDir, dataDir: string) =
     var og = maker(dataDir)
     og.savePng(outDir / ("og_" & name & ".png"))
     echo "wrote " & outDir / ("og_" & name & ".png")
+  var rich = richSample(dataDir)
+  rich.savePng(outDir / "og_rich.png")
+  echo "wrote " & outDir / "og_rich.png"
   var retina = sample(opDark, dataDir)
   retina.scale = 2.0
   retina.savePng(outDir / "og_retina.png")

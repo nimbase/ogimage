@@ -4,8 +4,10 @@
 ## Rendering lives in `ogimage/render`; presets in `ogimage/theme`.
 
 import nvg
+import ./spans
 
 export nvg
+export spans
 
 type
   OgPreset* = enum
@@ -63,12 +65,21 @@ type
       path*: string
       tint*: Color
       overlayAlpha*: float64
+      overlayAngleDeg*: float64
+        ## Direction of the scrim gradient, in degrees (90.0 = opaque
+        ## at the top behind the title, fading to transparent at the
+        ## bottom). Same convention as `angleDeg`.
       fit*: OgBgFit
       pos*: OgBgPos
 
   OgContent* = object
     title*: string
     description*: string
+    titleSegs*: seq[OgSeg]
+      ## Rich title runs; when non-empty these win over `title`.
+    descSegs*: seq[OgSeg]
+      ## Rich description runs; when non-empty these win over
+      ## `description`.
     badge*: string
       ## Small pill above the title. Empty hides it.
     site*: string
@@ -136,6 +147,15 @@ type
       ## Empty resolves via `resolveTitleFont`.
     fontBodyPath*: string
       ## Empty falls back to the title font.
+    fontStrongPath*: string
+      ## Bold face for `strong` segments. Empty falls back to the
+      ## layout font (a no-op when the base face is already bold).
+    fontEmPath*: string
+      ## Italic face for `em` segments. Empty falls back to the
+      ## layout font. A bold-italic file here also covers
+      ## `strong(em(...))` runs.
+    strongFaceIndex*: int
+    emFaceIndex*: int
     fallbackFontPaths*: seq[string]
       ## Optional fallback faces for glyphs missing from the title
       ## or body font. Tried in order; unknown files are skipped.
@@ -171,17 +191,21 @@ proc gradientBackground*(fromColor, toColor: Color,
 
 proc imageBackground*(path: string, overlayAlpha = 0.55,
     tint = rgbf(0, 0, 0)): OgBackground =
-  ## Cover-fit, centered. For fit/position control use
-  ## `imageBackgroundEx`.
+  ## Cover-fit, centered, with a vertical scrim gradient (`#000`
+  ## at `overlayAlpha` at the top fading to transparent) between the
+  ## photo and the text. For full control use `imageBackgroundEx`.
   OgBackground(kind: bgImage, path: path, tint: tint,
-    overlayAlpha: overlayAlpha, fit: bgCover, pos: bgPosCenter())
+    overlayAlpha: overlayAlpha, overlayAngleDeg: 90.0, fit: bgCover,
+    pos: bgPosCenter())
 
 proc imageBackgroundEx*(path: string, fit = bgCover,
     pos = bgPosCenter(), overlayAlpha = 0.55,
-    tint = rgbf(0, 0, 0)): OgBackground =
+    tint = rgbf(0, 0, 0), overlayAngleDeg = 90.0): OgBackground =
   ## Full background-image control: `fit` selects cover (fill +
   ## crop), contain (fit inside + letterbox), or fill (stretch);
-  ## `pos` is `bgPosCenter()` or `bgPosPx(x, y)`.
+  ## `pos` is `bgPosCenter()` or `bgPosPx(x, y)`; the scrim runs
+  ## from `tint` at `overlayAlpha` to transparent along
+  ## `overlayAngleDeg` (90.0 = opaque top, transparent bottom).
   OgBackground(kind: bgImage, path: path, tint: tint,
     overlayAlpha: overlayAlpha, fit: fit, pos: pos)
 
@@ -190,5 +214,14 @@ proc newOgImage*(title, description: string,
   ## Minimal constructor with standard 1200x630 dimensions.
   OgImage(width: 1200, height: 630,
     content: OgContent(title: title, description: description),
+    preset: preset, accent: rgbf(0, 0, 0), hasAccent: false,
+    hasBackground: false, titleFaceIndex: 0, bodyFaceIndex: 0)
+
+proc newOgImage*(titleSegs, descSegs: seq[OgSeg],
+    preset = opDark): OgImage =
+  ## Segment constructor: rich title/description runs built with
+  ## the `plain`/`strong`/`em`/`fg`/`bg`/`link` builders.
+  OgImage(width: 1200, height: 630,
+    content: OgContent(titleSegs: titleSegs, descSegs: descSegs),
     preset: preset, accent: rgbf(0, 0, 0), hasAccent: false,
     hasBackground: false, titleFaceIndex: 0, bodyFaceIndex: 0)

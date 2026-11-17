@@ -60,6 +60,51 @@ suite "ogimage themes":
     let th = themeForPreset(opDark, rgb(1, 2, 3), true)
     check th.accent == rgb(1, 2, 3)
 
+suite "ogimage spans":
+  test "segment builders compose":
+    let segs = @[plain("Ship "), strong(fg("faster", rgb(255, 0, 0))),
+      em(link("docs", "https://nimbase.dev"))]
+    check segmentsText(segs) == "Ship fasterdocs"
+    let strongF = loadFace("tests/data/Roboto-Bold.ttf")
+    let emF = loadFace("tests/data/Roboto-Italic.ttf")
+    let (text, spans, bgs) =
+      toTextSpans(segs, strongF, emF, rgb(0, 0, 255))
+    check text == "Ship fasterdocs"
+    check spans.len == 3
+    check spans[1].font != nil
+    check spans[1].hasColor
+    check spans[1].color == rgb(255, 0, 0)
+    check spans[2].font != nil
+    check spans[2].decor == tdUnderline
+    check spans[2].hasColor
+    check spans[2].color == rgb(0, 0, 255)
+    check bgs.len == 0
+
+  test "bg ranges and trim keep styles":
+    let segs = @[plain("ab"), bg(plain("cd"), rgb(0, 0, 0))]
+    let (_, _, bgs) = toTextSpans(segs, nil, nil, rgb(0, 0, 0))
+    check bgs.len == 1
+    check bgs[0].first == 2
+    check bgs[0].last == 4
+    let cut = trimSegs(segs, 3)
+    check segmentsText(cut) == "abc"
+    check cut.len == 2
+    check cut[1].hasBg
+
+  test "segment title and description render":
+    var og = makeOg()
+    og.content.titleSegs = @[plain("Ship "),
+      strong(fg("faster", rgb(56, 189, 248)))]
+    og.content.descSegs = @[plain("Zero "), em(plain("native")),
+      link(plain(" deps"), "https://nimbase.dev"),
+      bg(fg(plain("!"), rgb(15, 23, 42)), rgb(253, 224, 71))]
+    check encodePng(og).len > 100
+    og.fontStrongPath = "tests/data/Roboto-Bold.ttf"
+    og.fontEmPath = "tests/data/Roboto-Italic.ttf"
+    check encodePng(og).len > 100
+    og.content.titleSegs = @[plain("Long ".repeat(30))]
+    check encodePng(og).len > 100
+
 suite "ogimage render":
   test "invalid dimensions raise":
     var og = makeOg()
@@ -146,6 +191,34 @@ suite "ogimage render":
     check cover != contain
     check cover != fill
     check cover != shifted
+
+  test "bg image scrim fades from tint to transparent":
+    proc scrimOg(alpha: float64): OgImage =
+      result = makeOg()
+      result.hasBackground = true
+      result.background = imageBackgroundEx(
+        "tests/data/pexels-marie-gaebel-2164524425-40393792.jpeg",
+        bgCover, bgPosCenter(), overlayAlpha = alpha)
+    check encodePng(scrimOg(0.55)) != encodePng(scrimOg(0.0))
+
+  test "segment bg highlight does not leak into ink":
+    var og = makeOg()
+    og.content.titleSegs = @[plain("AAAA"),
+      bg(plain("BBBB"), rgb(253, 224, 71))]
+    og.content.descSegs = @[]
+    let c = render(og)
+    var found = false
+    for y in 130 ..< 260:
+      for x in 80 ..< 600:
+        let px = c.surface.getPixel(x, y)
+        if px.r > 0.5:
+          # First ink is the plain run: white, not highlight yellow.
+          check px.b > 0.8
+          found = true
+          break
+      if found:
+        break
+    check found
 
   test "missing logo is skipped, not fatal":
     var og = makeOg()

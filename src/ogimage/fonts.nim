@@ -40,6 +40,54 @@ proc defaultBodyCandidates*(): seq[string] =
   result.add("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf")
   result.add("/usr/share/fonts/TTF/DejaVuSans.ttf")
 
+proc resolveTitlePath*(og: OgImage): string =
+  ## The title font file that `ensureFonts` would register.
+  if og.fontTitlePath != "":
+    try:
+      if fileExists(og.fontTitlePath):
+        return og.fontTitlePath
+    except CatchableError:
+      discard
+  for cand in defaultTitleCandidates():
+    try:
+      if fileExists(cand):
+        return cand
+    except CatchableError:
+      discard
+  ""
+
+proc resolveBodyPath*(og: OgImage): string =
+  ## The body font file that `ensureFonts` would register: the
+  ## explicit body path, else the title path, else system defaults,
+  ## else the resolved title path.
+  let bodyPath = if og.fontBodyPath != "": og.fontBodyPath
+    else: og.fontTitlePath
+  if bodyPath != "":
+    try:
+      if fileExists(bodyPath):
+        return bodyPath
+    except CatchableError:
+      discard
+  for cand in defaultBodyCandidates():
+    try:
+      if fileExists(cand):
+        return cand
+    except CatchableError:
+      discard
+  resolveTitlePath(og)
+
+proc loadFace*(path: string, faceIndex = 0): TextFont =
+  ## Parse a font file for span runs. Returns nil for empty paths
+  ## and unreadable files, so callers fall back to the layout font.
+  if path == "":
+    return nil
+  try:
+    if not fileExists(path):
+      return nil
+    loadFontFile(path, faceIndex)
+  except CatchableError:
+    nil
+
 proc ensureFallbacks*(c: Canvas, paths: openArray[string]) =
   ## Register `paths` as fallback faces for the current state, so
   ## glyphs missing from the title/body font (e.g. Hebrew alongside
