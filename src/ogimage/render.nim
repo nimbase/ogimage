@@ -478,13 +478,24 @@ proc drawFooter(c: Canvas, og: OgImage, th: OgTheme, bodyId: int,
   c.setFontSize(th.siteSize)
   c.setLineHeight(1.2)
   c.setFillColor(th.siteColor)
+  # One shared baseline for every item: rows with icon boxes lay
+  # out taller ink than text-only rows, so top-anchoring each row
+  # seats them on different baselines. Anchoring to the baseline
+  # keeps all labels on one line; the probe ("Ag" covers ascender
+  # and descender) recovers the baseline that puts ink top at
+  # footerY.
+  let probe = c.textSpanBounds(0, 0, "Ag", newSeq[TextSpan](0),
+    TextBoxOpts(maxW: contentW, boxH: boxH, ha: thaLeft,
+      va: tvaBaseline, wrap: false, overflow: toVisible,
+      fit: tfNone, maxLines: 1, ellipsis: "..."))
+  let baseY = footerY - probe.y
   if og.content.footer.len == 0:
     if og.content.site == "":
       return
-    discard c.fillTextBox(contentX, footerY, og.content.site,
+    discard c.fillTextBox(contentX, baseY, og.content.site,
       TextBoxOpts(maxW: contentW, boxH: boxH, ha: th.align,
-        va: tvaTop, wrap: false, overflow: toEllipsis, fit: tfNone,
-        maxLines: 1, ellipsis: "..."))
+        va: tvaBaseline, wrap: false, overflow: toEllipsis,
+        fit: tfNone, maxLines: 1, ellipsis: "..."))
     return
   let iconS = th.siteSize * 1.2
   var iconIds: seq[int] = @[]
@@ -526,7 +537,7 @@ proc drawFooter(c: Canvas, og: OgImage, th: OgTheme, bodyId: int,
     x = contentX + contentW - totalW
   else:
     discard
-  let iy = footerY + (boxH - iconS) * 0.5
+  let iy = baseY + (probe.y + probe.h * 0.5) - iconS * 0.5
   for i in 0 ..< labels.len:
     c.setFillColor(th.siteColor)
     if slots[i]:
@@ -540,25 +551,25 @@ proc drawFooter(c: Canvas, og: OgImage, th: OgTheme, bodyId: int,
             box: SpanBox(kind: sbkImage, imageId: iconIds[i],
               imageW: float64(iw), imageH: float64(ih)),
             alignSelf: faCenter, size: iconS)]
-          discard c.fillSpanBox(x, footerY, row, spans,
+          discard c.fillSpanBox(x, baseY, row, spans,
             TextBoxOpts(maxW: iconS + iconGap + labelWs[i],
-              boxH: boxH, ha: thaLeft, va: tvaTop, wrap: false,
+              boxH: boxH, ha: thaLeft, va: tvaBaseline, wrap: false,
               overflow: toEllipsis, fit: tfNone, maxLines: 1,
               ellipsis: "...",
               flex: TextRowFlex(gap: iconGap)))
           x += iconS + iconGap + labelWs[i] + itemGap
           continue
       c.drawPlaceholder(bodyId, x, iy, iconS, iconS, 6.0)
-      discard c.fillTextBox(x + iconS + iconGap, footerY, labels[i],
+      discard c.fillTextBox(x + iconS + iconGap, baseY, labels[i],
         TextBoxOpts(maxW: labelWs[i], boxH: boxH, ha: thaLeft,
-          va: tvaTop, wrap: false, overflow: toEllipsis, fit: tfNone,
-          maxLines: 1, ellipsis: "..."))
+          va: tvaBaseline, wrap: false, overflow: toEllipsis,
+          fit: tfNone, maxLines: 1, ellipsis: "..."))
       x += iconS + iconGap + labelWs[i] + itemGap
     else:
-      discard c.fillTextBox(x, footerY, labels[i],
+      discard c.fillTextBox(x, baseY, labels[i],
         TextBoxOpts(maxW: labelWs[i], boxH: boxH, ha: thaLeft,
-          va: tvaTop, wrap: false, overflow: toEllipsis, fit: tfNone,
-          maxLines: 1, ellipsis: "..."))
+          va: tvaBaseline, wrap: false, overflow: toEllipsis,
+          fit: tfNone, maxLines: 1, ellipsis: "..."))
       x += labelWs[i] + itemGap
 
 proc render*(og: OgImage): Canvas =

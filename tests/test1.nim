@@ -291,6 +291,29 @@ suite "ogimage render":
     check text.found
     check abs(icon.cy - text.cy) <= 2.0
 
+  test "footer items share one baseline":
+    # Icon rows lay out taller ink than text-only rows; every item
+    # must still sit on the same baseline.
+    var og = makeOg()
+    og.content.site = ""
+    og.content.footer = @[footerItem("ABC",
+      "tests/data/github-white.png", "tests/data/github-black.png"),
+      footerItem("DEF")]
+    let c = render(og)
+    proc labelCy(c: Canvas, x0, x1: int): float64 =
+      var top = -1
+      var bottom = -1
+      for y in 500 ..< 610:
+        for x in x0 ..< x1:
+          if c.surface.getPixel(x, y).r > 0.5:
+            if top < 0:
+              top = y
+            bottom = y
+            break
+      check top >= 0
+      (float64(top) + float64(bottom)) * 0.5
+    check abs(labelCy(c, 115, 175) - labelCy(c, 195, 260)) <= 1.0
+
   test "fitted icon uploads near display size, missing fails":
     let c = newCanvas(64, 64)
     # 512px source drawn at 28.8px (the footer icon): 2x oversample.
