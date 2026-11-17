@@ -150,6 +150,37 @@ suite "ogimage render":
     og.repoIconLight = "/nonexistent.png"
     check encodePng(og).len > 100
 
+  test "footer icon centers on the handle text ink":
+    # The mark is an inline box child (parent-driven alignment), so
+    # its ink center must ride the handle's ink center instead of
+    # the old hand-positioned box offset.
+    var og = makeOg()
+    og.content.site = ""
+    og.content.repo = "@nimbase/ogimage"
+    og.repoIconDark = "tests/data/github-white.png"
+    og.repoIconLight = "tests/data/github-black.png"
+    let c = render(og)
+    proc inkRows(c: Canvas, x0, x1: int): tuple[found: bool,
+        cy: float64] =
+      var top = -1
+      var bottom = -1
+      for y in 500 ..< 610:
+        for x in x0 ..< x1:
+          if c.surface.getPixel(x, y).r > 0.5:
+            if top < 0:
+              top = y
+            bottom = y
+            break
+      if top < 0:
+        (false, 0.0)
+      else:
+        (true, (float64(top) + float64(bottom)) * 0.5)
+    let icon = inkRows(c, 60, 100)
+    let text = inkRows(c, 110, 500)
+    check icon.found
+    check text.found
+    check abs(icon.cy - text.cy) <= 2.0
+
   test "fitted icon uploads near display size, missing fails":
     let c = newCanvas(64, 64)
     # 512px source drawn at 28.8px (the footer icon): 2x oversample.

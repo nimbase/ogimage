@@ -395,13 +395,24 @@ proc drawFooter(c: Canvas, og: OgImage, th: OgTheme, bodyId: int,
     discard
   let iy = footerY + (36.0 - iconS) * 0.5
   if iconId != 0:
-    c.beginPath()
-    c.rect(startX, iy, iconS, iconS)
-    c.setFillPaint(c.imagePattern(startX, iy, iconS, iconS, 0.0,
-      iconId, 1.0))
-    c.fill()
-  else:
-    c.drawPlaceholder(bodyId, startX, iy, iconS, iconS, 6.0)
+    # Inline flex row: the mark is an image box child centered on
+    # the handle's text ink (parent-driven alignment), so the row
+    # can no longer drift like the old hand-positioned rect.
+    let (iw, ih, ok) = c.imageSize(iconId)
+    if ok and iw > 0 and ih > 0:
+      let row = "\uFFFC " & og.content.repo
+      let spans = [TextSpan(first: 0, last: 3,
+        box: SpanBox(kind: sbkImage, imageId: iconId,
+          imageW: float64(iw), imageH: float64(ih)),
+        alignSelf: faCenter, size: iconS)]
+      c.setFillColor(th.siteColor)
+      discard c.fillSpanBox(startX, footerY, row, spans,
+        TextBoxOpts(maxW: textW + iconS + iconGap, boxH: 36.0,
+          ha: thaLeft, va: tvaTop, wrap: false, overflow: toEllipsis,
+          fit: tfNone, maxLines: 1, ellipsis: "...",
+          flex: TextRowFlex(gap: iconGap)))
+      return
+  c.drawPlaceholder(bodyId, startX, iy, iconS, iconS, 6.0)
   c.setFillColor(th.siteColor)
   discard c.fillTextBox(startX + iconS + iconGap, footerY,
     og.content.repo, TextBoxOpts(maxW: textW, boxH: 36.0,
