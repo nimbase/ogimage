@@ -14,3 +14,4 @@ testresults/
 !/tests/data/*.png
 !/tests/data/*.svg
 clue.lock
+/demo
