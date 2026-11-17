@@ -7,4 +7,10 @@ testresults/
 !/tests/bench
 !/tests/*.nim
 !/tests/*.nims
+!/tests/data/
+!/tests/data/*.ttf
+!/tests/data/*.jpeg
+!/tests/data/*.jpg
+!/tests/data/*.png
+!/tests/data/*.svg
 clue.lock
