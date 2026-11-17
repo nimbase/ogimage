@@ -66,11 +66,23 @@ type
       tint*: Color
       overlayAlpha*: float64
       overlayAngleDeg*: float64
-        ## Direction of the scrim gradient, in degrees (90.0 = opaque
-        ## at the top behind the title, fading to transparent at the
-        ## bottom). Same convention as `angleDeg`.
+        ## Direction of the scrim gradient, in degrees (-90.0 =
+        ## opaque at the bottom behind the description/footer,
+        ## fading to transparent at the top). Same convention as
+        ## `angleDeg`.
       fit*: OgBgFit
       pos*: OgBgPos
+
+  OgFooterItem* = object
+    ## One bottom-row item: an optional icon plus its label
+    ## (handle, counter, caption — e.g. "@nimbase/ogimage", "1.2k",
+    ## "MIT"). Any raster icon works; the dark/light paths pick the
+    ## variant for the preset brightness.
+    iconDark*: string
+      ## Icon raster for dark presets; "" draws the label alone.
+    iconLight*: string
+      ## Icon raster for light presets; "" falls back to `iconDark`.
+    label*: string
 
   OgContent* = object
     title*: string
@@ -84,10 +96,10 @@ type
       ## Small pill above the title. Empty hides it.
     site*: string
       ## Plain footer label, e.g. "nimbase.dev". Empty hides it.
-      ## Ignored when `repo` is set.
-    repo*: string
-      ## Repo handle footer, e.g. "@nimbase/ogimage", drawn with the
-      ## `repoIconDark`/`repoIconLight` mark. Empty hides it.
+      ## Ignored when `footer` items are set.
+    footer*: seq[OgFooterItem]
+      ## Bottom-row icon + label items (handles, counters, captions)
+      ## laid out as one NVG flex row. Empty falls back to `site`.
     logoPath*: string
       ## Optional square-ish logo drawn in the top-right corner.
       ## Empty skips it, as does a set `photoPath` (the photo owns
@@ -162,16 +174,18 @@ type
       ## Same-direction scripts only: mixed-direction text (e.g.
       ## Hebrew + Latin) needs a single covering font instead, since
       ## fallback runs shape in logical order.
-    repoIconDark*: string
-      ## GitHub-style mark drawn on dark presets with `repo`.
-      ## Empty draws the handle without an icon.
-    repoIconLight*: string
-      ## GitHub-style mark drawn on light presets with `repo`.
-      ## Empty draws the handle without an icon.
     titleFaceIndex*: int
     bodyFaceIndex*: int
 
   OgError* = object of CatchableError
+
+proc footerItem*(label: string, iconDark = "",
+    iconLight = ""): OgFooterItem =
+  ## One footer row item: `label` with an optional icon. The dark
+  ## preset draws `iconDark`, the light preset `iconLight` (falling
+  ## back to `iconDark`).
+  OgFooterItem(iconDark: iconDark, iconLight: iconLight,
+    label: label)
 
 proc bgPosCenter*(): OgBgPos =
   ## Centered on both axes (`center center`).
@@ -192,22 +206,23 @@ proc gradientBackground*(fromColor, toColor: Color,
 proc imageBackground*(path: string, overlayAlpha = 0.55,
     tint = rgbf(0, 0, 0)): OgBackground =
   ## Cover-fit, centered, with a vertical scrim gradient (`#000`
-  ## at `overlayAlpha` at the top fading to transparent) between the
-  ## photo and the text. For full control use `imageBackgroundEx`.
+  ## at `overlayAlpha` at the bottom fading to transparent) between
+  ## the photo and the text. For full control use `imageBackgroundEx`.
   OgBackground(kind: bgImage, path: path, tint: tint,
-    overlayAlpha: overlayAlpha, overlayAngleDeg: 90.0, fit: bgCover,
+    overlayAlpha: overlayAlpha, overlayAngleDeg: -90.0, fit: bgCover,
     pos: bgPosCenter())
 
 proc imageBackgroundEx*(path: string, fit = bgCover,
     pos = bgPosCenter(), overlayAlpha = 0.55,
-    tint = rgbf(0, 0, 0), overlayAngleDeg = 90.0): OgBackground =
+    tint = rgbf(0, 0, 0), overlayAngleDeg = -90.0): OgBackground =
   ## Full background-image control: `fit` selects cover (fill +
   ## crop), contain (fit inside + letterbox), or fill (stretch);
   ## `pos` is `bgPosCenter()` or `bgPosPx(x, y)`; the scrim runs
   ## from `tint` at `overlayAlpha` to transparent along
-  ## `overlayAngleDeg` (90.0 = opaque top, transparent bottom).
+  ## `overlayAngleDeg` (-90.0 = opaque bottom, transparent top).
   OgBackground(kind: bgImage, path: path, tint: tint,
-    overlayAlpha: overlayAlpha, fit: fit, pos: pos)
+    overlayAlpha: overlayAlpha, overlayAngleDeg: overlayAngleDeg,
+    fit: fit, pos: pos)
 
 proc newOgImage*(title, description: string,
     preset = opDark): OgImage =

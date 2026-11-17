@@ -463,74 +463,103 @@ proc drawBadge(c: Canvas, og: OgImage, th: OgTheme, bodyId: int,
 
 proc drawFooter(c: Canvas, og: OgImage, th: OgTheme, bodyId: int,
     contentX, contentW: float64) =
-  ## Bottom row: `repo` handle with its GitHub-style mark, or the
-  ## plain `site` label when no repo is set. The mark variant
-  ## follows the preset brightness; a missing file draws the handle
-  ## without an icon.
+  ## Bottom row of icon + label items (handles, counters, captions)
+  ## composed with NVG flex rows: each item is an optional fitted
+  ## icon box plus its label, items separated by a wider gap, the
+  ## whole row aligned per `th.align`. The icon variant follows the
+  ## preset brightness; a missing file draws a placeholder box, an
+  ## empty path draws the label alone. Without items the plain
+  ## `site` label renders instead.
+  const boxH = 36.0
+  const iconGap = 10.0
+  const itemGap = 28.0
   let footerY = float64(og.height) - th.padding - 30.0
   c.setFontFaceId(bodyId)
   c.setFontSize(th.siteSize)
   c.setLineHeight(1.2)
   c.setFillColor(th.siteColor)
-  if og.content.repo == "":
+  if og.content.footer.len == 0:
     if og.content.site == "":
       return
     discard c.fillTextBox(contentX, footerY, og.content.site,
-      TextBoxOpts(maxW: contentW, boxH: 36.0, ha: th.align,
+      TextBoxOpts(maxW: contentW, boxH: boxH, ha: th.align,
         va: tvaTop, wrap: false, overflow: toEllipsis, fit: tfNone,
         maxLines: 1, ellipsis: "..."))
     return
   let iconS = th.siteSize * 1.2
-  const iconGap = 10.0
-  let iconPath = if th.onDark: og.repoIconDark else: og.repoIconLight
-  var iconId = 0
-  if iconPath != "":
-    iconId = c.createFittedImage(iconPath, iconS, iconS)
-  if iconPath == "":
-    discard c.fillTextBox(contentX, footerY, og.content.repo,
-      TextBoxOpts(maxW: contentW, boxH: 36.0, ha: th.align,
-        va: tvaTop, wrap: false, overflow: toEllipsis, fit: tfNone,
-        maxLines: 1, ellipsis: "..."))
-    return
-  let m = c.measureTextBox(0, 0, og.content.repo, TextBoxOpts(
-    maxW: contentW, boxH: 36.0, ha: thaLeft, va: tvaTop,
-    wrap: false, overflow: toEllipsis, fit: tfNone, maxLines: 1,
-    ellipsis: "..."))
-  let textW = min(m.advance, contentW - iconS - iconGap)
-  let totalW = textW + iconS + iconGap
-  var startX = contentX
+  var iconIds: seq[int] = @[]
+  var slots: seq[bool] = @[]
+  var labels: seq[string] = @[]
+  var labelWs: seq[float64] = @[]
+  for it in og.content.footer:
+    let p = if th.onDark: it.iconDark
+      elif it.iconLight != "": it.iconLight
+      else: it.iconDark
+    var id = 0
+    var slot = false
+    if p != "":
+      slot = true
+      id = c.createFittedImage(p, iconS, iconS)
+    let m = c.measureTextBox(0, 0, it.label, TextBoxOpts(
+      maxW: contentW, boxH: boxH, ha: thaLeft, va: tvaTop,
+      wrap: false, overflow: toEllipsis, fit: tfNone, maxLines: 1,
+      ellipsis: "..."))
+    iconIds.add(id)
+    slots.add(slot)
+    labels.add(it.label)
+    labelWs.add(m.advance)
+  var totalW = itemGap * float64(max(0, labels.len - 1))
+  for i in 0 ..< labels.len:
+    totalW += labelWs[i]
+    if slots[i]:
+      totalW += iconS + iconGap
+  if totalW > contentW and labelWs.len > 0:
+    # Icons and gaps are fixed; the last label absorbs overflow.
+    var fixedW = totalW - labelWs[^1]
+    labelWs[^1] = max(0.0, contentW - fixedW)
+    totalW = fixedW + labelWs[^1]
+  var x = contentX
   case th.align
   of thaCenter:
-    startX = contentX + (contentW - totalW) * 0.5
+    x = contentX + (contentW - totalW) * 0.5
   of thaRight:
-    startX = contentX + contentW - totalW
+    x = contentX + contentW - totalW
   else:
     discard
-  let iy = footerY + (36.0 - iconS) * 0.5
-  if iconId != 0:
-    # Inline flex row: the mark is an image box child centered on
-    # the handle's text ink (parent-driven alignment), so the row
-    # can no longer drift like the old hand-positioned rect.
-    let (iw, ih, ok) = c.imageSize(iconId)
-    if ok and iw > 0 and ih > 0:
-      let row = "\uFFFC " & og.content.repo
-      let spans = [TextSpan(first: 0, last: 3,
-        box: SpanBox(kind: sbkImage, imageId: iconId,
-          imageW: float64(iw), imageH: float64(ih)),
-        alignSelf: faCenter, size: iconS)]
-      c.setFillColor(th.siteColor)
-      discard c.fillSpanBox(startX, footerY, row, spans,
-        TextBoxOpts(maxW: textW + iconS + iconGap, boxH: 36.0,
-          ha: thaLeft, va: tvaTop, wrap: false, overflow: toEllipsis,
-          fit: tfNone, maxLines: 1, ellipsis: "...",
-          flex: TextRowFlex(gap: iconGap)))
-      return
-  c.drawPlaceholder(bodyId, startX, iy, iconS, iconS, 6.0)
-  c.setFillColor(th.siteColor)
-  discard c.fillTextBox(startX + iconS + iconGap, footerY,
-    og.content.repo, TextBoxOpts(maxW: textW, boxH: 36.0,
-      ha: thaLeft, va: tvaTop, wrap: false, overflow: toEllipsis,
-      fit: tfNone, maxLines: 1, ellipsis: "..."))
+  let iy = footerY + (boxH - iconS) * 0.5
+  for i in 0 ..< labels.len:
+    c.setFillColor(th.siteColor)
+    if slots[i]:
+      if iconIds[i] != 0:
+        let (iw, ih, ok) = c.imageSize(iconIds[i])
+        if ok and iw > 0 and ih > 0:
+          # Inline flex pair: the icon box rides the label's text
+          # ink center, so multi-item rows stay glued per item.
+          let row = "\uFFFC " & labels[i]
+          let spans = [TextSpan(first: 0, last: 3,
+            box: SpanBox(kind: sbkImage, imageId: iconIds[i],
+              imageW: float64(iw), imageH: float64(ih)),
+            alignSelf: faCenter, size: iconS)]
+          discard c.fillSpanBox(x, footerY, row, spans,
+            TextBoxOpts(maxW: iconS + iconGap + labelWs[i],
+              boxH: boxH, ha: thaLeft, va: tvaTop, wrap: false,
+              overflow: toEllipsis, fit: tfNone, maxLines: 1,
+              ellipsis: "...",
+              flex: TextRowFlex(gap: iconGap)))
+          x += iconS + iconGap + labelWs[i] + itemGap
+          continue
+      c.drawPlaceholder(bodyId, x, iy, iconS, iconS, 6.0)
+      discard c.fillTextBox(x + iconS + iconGap, footerY, labels[i],
+        TextBoxOpts(maxW: labelWs[i], boxH: boxH, ha: thaLeft,
+          va: tvaTop, wrap: false, overflow: toEllipsis, fit: tfNone,
+          maxLines: 1, ellipsis: "..."))
+      x += iconS + iconGap + labelWs[i] + itemGap
+    else:
+      discard c.fillTextBox(x, footerY, labels[i],
+        TextBoxOpts(maxW: labelWs[i], boxH: boxH, ha: thaLeft,
+          va: tvaTop, wrap: false, overflow: toEllipsis, fit: tfNone,
+          maxLines: 1, ellipsis: "..."))
+      x += labelWs[i] + itemGap
 
 proc render*(og: OgImage): Canvas =
   ## Rasterize `og` into a fresh `Canvas`. Raises `OgError` on bad

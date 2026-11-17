@@ -40,6 +40,9 @@ suite "ogimage construction":
     check gradientBackground(rgb(0, 0, 0), rgb(1, 1, 1)).kind == bgGradient
     check imageBackground("x.png").kind == bgImage
     check imageBackground("x.png").overlayAlpha == 0.55
+    check imageBackground("x.png").overlayAngleDeg == -90.0
+    check imageBackgroundEx("x.png", bgCover, bgPosCenter(),
+      overlayAlpha = 0.5, overlayAngleDeg = 0.0).overlayAngleDeg == 0.0
     check imageBackground("x.png").fit == bgCover
     check imageBackground("x.png").pos.centered
     check imageBackgroundEx("x.png", bgContain,
@@ -242,28 +245,30 @@ suite "ogimage render":
     check abs(px.g - 213.0 / 255.0) < 0.03
     check abs(px.b - 219.0 / 255.0) < 0.03
 
-  test "repo footer renders with icon and plain fallback":
+  test "footer items render with icons, counters and fallback":
     var og = makeOg()
     og.content.site = ""
-    og.content.repo = "@nimbase/ogimage"
-    og.repoIconDark = "tests/data/github-white.png"
-    og.repoIconLight = "tests/data/github-black.png"
+    og.content.footer = @[footerItem("@nimbase/ogimage",
+      "tests/data/github-white.png", "tests/data/github-black.png"),
+      footerItem("1.2k"), footerItem("MIT")]
     check encodePng(og).len > 100
     og.preset = opLight
     check encodePng(og).len > 100
-    og.repoIconDark = "/nonexistent.png"
-    og.repoIconLight = "/nonexistent.png"
+    og.content.footer = @[footerItem("x", "/nonexistent.png",
+      "/nonexistent.png")]
+    check encodePng(og).len > 100
+    og.content.footer = @[]
+    og.content.site = "nimbase.dev"
     check encodePng(og).len > 100
 
-  test "footer icon centers on the handle text ink":
+  test "footer icon centers on the label text ink":
     # The mark is an inline box child (parent-driven alignment), so
-    # its ink center must ride the handle's ink center instead of
-    # the old hand-positioned box offset.
+    # its ink center must ride the label's ink center instead of
+    # a hand-positioned box offset.
     var og = makeOg()
     og.content.site = ""
-    og.content.repo = "@nimbase/ogimage"
-    og.repoIconDark = "tests/data/github-white.png"
-    og.repoIconLight = "tests/data/github-black.png"
+    og.content.footer = @[footerItem("@nimbase/ogimage",
+      "tests/data/github-white.png", "tests/data/github-black.png")]
     let c = render(og)
     proc inkRows(c: Canvas, x0, x1: int): tuple[found: bool,
         cy: float64] =

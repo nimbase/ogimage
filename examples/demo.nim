@@ -23,10 +23,10 @@ proc repoLayout(): tuple[data, outDir: string] =
       return (d, d.parentDir().parentDir() / "examples" / "out")
   ("tests/data", "examples/out")
 
-proc applyRepo(og: var OgImage, dataDir: string) =
-  og.content.repo = "@nimbase/ogimage"
-  og.repoIconDark = dataDir / "github-white.png"
-  og.repoIconLight = dataDir / "github-black.png"
+proc applyFooter(og: var OgImage, dataDir: string) =
+  og.content.footer = @[footerItem("@nimbase/ogimage",
+    dataDir / "github-white.png", dataDir / "github-black.png"),
+    footerItem("MIT")]
 
 proc sample(preset: OgPreset, dataDir: string): OgImage =
   result = newOgImage(
@@ -34,7 +34,7 @@ proc sample(preset: OgPreset, dataDir: string): OgImage =
     "Fixed sizes, ellipsis trimming, and named presets. No browser, no native deps.",
     preset)
   result.content.badge = "nimbase"
-  result.applyRepo(dataDir)
+  result.applyFooter(dataDir)
   let bold = dataDir / boldFile
   let regular = dataDir / regularFile
   if fileExists(bold):
@@ -56,7 +56,7 @@ proc russianSample(dataDir: string): OgImage =
     "Фиксированные размеры, обрезка с многоточием и именованные темы. Без браузера и нативных зависимостей.",
     opLight)
   result.content.badge = "нимбейс"
-  result.applyRepo(dataDir)
+  result.applyFooter(dataDir)
   result.applyFonts(dataDir)
 
 proc hebrewFontPair(): tuple[title, body: string] =
@@ -89,7 +89,7 @@ proc hebrewSample(dataDir: string): OgImage =
     "גדלים קבועים, חיתוך עם שלוש נקודות וערכות מוכנות. בלי דפדפן ובלי תלויות.",
     opGradient)
   result.content.badge = "nimbase"
-  result.applyRepo(dataDir)
+  result.applyFooter(dataDir)
   result.hasAlign = true
   result.align = thaRight
   let (ht, hb) = hebrewFontPair()
@@ -109,7 +109,7 @@ proc longSample(preset: OgPreset, dataDir: string): OgImage =
     "All the world's a stage, and all the men and women merely players: they have their exits and their entrances, and one man in his time plays many parts, his acts being seven ages.",
     preset)
   result.content.badge = "shakespeare"
-  result.applyRepo(dataDir)
+  result.applyFooter(dataDir)
   let bold = dataDir / boldFile
   let regular = dataDir / regularFile
   if fileExists(bold):
@@ -131,7 +131,7 @@ proc richSample(dataDir: string): OgImage =
         rgb(253, 224, 71)), plain(".")],
     opDark)
   result.content.badge = "nimbase"
-  result.applyRepo(dataDir)
+  result.applyFooter(dataDir)
   result.applyFonts(dataDir)
   result.fontStrongPath = dataDir / boldFile
   let italic = dataDir / "Roboto-Italic.ttf"
@@ -172,8 +172,8 @@ proc main(outDir, dataDir: string) =
   var missing = sample(opDark, dataDir)
   missing.content.photoPath = "/nonexistent/photo.png"
   missing.content.logoPath = "/nonexistent/logo.png"
-  missing.repoIconDark = "/nonexistent/dark.png"
-  missing.repoIconLight = "/nonexistent/light.png"
+  missing.content.footer = @[footerItem("@nimbase/ogimage",
+    "/nonexistent/dark.png", "/nonexistent/light.png")]
   missing.savePng(outDir / "og_missing.png")
   echo "wrote " & outDir / "og_missing.png"
   for (name, fit, pos) in [("bg_cover", bgCover, bgPosCenter()),

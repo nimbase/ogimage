@@ -19,7 +19,7 @@
 - Segment rich text: `plain`/`strong`/`em`/`fg`/`bg`/`link` builders over nvg spans (no markup), with per-run faces, highlight boxes, and link styling
 - Fixed type sizes with ellipsis trimming (long copy ends in `...`, never overflows)
 - Photo avatar in the headline row (128x128, 20px rounded mask, cover-fit)
-- Repo footer with GitHub mark + handle, auto light/dark variant
+- Generic footer stats: icon + label items (handles, counters, captions) in one NVG flex row, auto dark/light icon variant
 - Labeled gray placeholders (`128x128`, ...) wherever an image fails to load
 - Retina output via `scale = 2.0` (2400x1260, same layout, same code)
 - Cyrillic, RTL Hebrew (with right alignment), and fallback fonts
@@ -33,9 +33,9 @@ var og = newOgImage("Pure-Nim OpenGraph images in one call",
   "Fixed sizes, ellipsis trimming, and named presets.",
   opDark)
 og.content.badge = "nimbase"
-og.content.repo = "@nimbase/ogimage"
-og.repoIconDark = "tests/data/github-white.png"
-og.repoIconLight = "tests/data/github-black.png"
+og.content.footer = @[footerItem("@nimbase/ogimage",
+  "tests/data/github-white.png", "tests/data/github-black.png"),
+  footerItem("MIT")]
 og.fontTitlePath = "tests/data/Roboto-Bold.ttf"
 og.fontBodyPath = "tests/data/Roboto-Regular.ttf"
 og.savePng("og_dark.png")
