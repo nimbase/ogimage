@@ -24,19 +24,46 @@ proc bgEndpoints(w, h: int,
   let cy = float64(h) * 0.5
   (cx - dx * half, cy - dy * half, cx + dx * half, cy + dy * half)
 
-proc drawImageCover(c: Canvas, id: int, W, H: float64) =
-  ## Stretch `id` over the full canvas. Clamp sampling extends edge
-  ## texels outside the tile, which reads as a cover fit.
+proc drawImageFit(c: Canvas, id: int, W, H: float64, fit: OgBgFit,
+    pos: OgBgPos) =
+  ## Draw `id` per `fit`: cover scales to fill and crops, contain
+  ## scales to fit inside (letterboxing on the cleared page color),
+  ## fill stretches to the exact canvas size. `pos` is either
+  ## centered or an explicit px top-left origin. Only the image
+  ## rect itself is filled, so letterbox/off-canvas gaps keep the
+  ## page color instead of smeared edge texels.
   let (iw, ih, ok) = c.imageSize(id)
   if not ok or iw <= 0 or ih <= 0:
     return
-  let scale = max(W / float64(iw), H / float64(ih))
-  let dw = float64(iw) * scale
-  let dh = float64(ih) * scale
-  let ox = (W - dw) * 0.5
-  let oy = (H - dh) * 0.5
+  var dw, dh, ox, oy: float64
+  case fit
+  of bgFill:
+    dw = W
+    dh = H
+    ox = 0.0
+    oy = 0.0
+  of bgCover:
+    let s = max(W / float64(iw), H / float64(ih))
+    dw = float64(iw) * s
+    dh = float64(ih) * s
+    if pos.centered:
+      ox = (W - dw) * 0.5
+      oy = (H - dh) * 0.5
+    else:
+      ox = pos.x
+      oy = pos.y
+  of bgContain:
+    let s = min(W / float64(iw), H / float64(ih))
+    dw = float64(iw) * s
+    dh = float64(ih) * s
+    if pos.centered:
+      ox = (W - dw) * 0.5
+      oy = (H - dh) * 0.5
+    else:
+      ox = pos.x
+      oy = pos.y
   c.beginPath()
-  c.rect(0, 0, W, H)
+  c.rect(ox, oy, dw, dh)
   c.setFillPaint(c.imagePattern(ox, oy, dw, dh, 0.0, id, 1.0))
   c.fill()
 
@@ -149,7 +176,8 @@ proc drawBackground(c: Canvas, og: OgImage, th: OgTheme) =
       if og.background.path != "":
         let id = c.createImageFile(og.background.path, {})
         if id != 0:
-          drawImageCover(c, id, W, H)
+          drawImageFit(c, id, W, H, og.background.fit,
+            og.background.pos)
           c.beginPath()
           c.rect(0, 0, W, H)
           c.setFillColor(og.background.tint.withAlpha(
@@ -178,8 +206,9 @@ proc drawBackground(c: Canvas, og: OgImage, th: OgTheme) =
   else:
     c.clear(th.pageBg)
 
-proc drawDecor(c: Canvas, og: OgImage, th: OgTheme) =
-  ## Two translucent glow discs; deterministic, no randomness.
+proc drawDecor*(c: Canvas, og: OgImage, th: OgTheme) =
+  ## Opt-in glow discs (no longer drawn implicitly). Call after
+  ## `render` content or from custom example code when wanted.
   let W = float64(og.width)
   let H = float64(og.height)
   c.setFillColor(th.accent.withAlpha(0.10))
@@ -437,7 +466,6 @@ proc render*(og: OgImage): Canvas =
   c.ensureFallbacks(og.fallbackFontPaths)
 
   drawBackground(c, og, th)
-  drawDecor(c, og, th)
 
   var contentX = th.padding
   var contentW = float64(og.width) - th.padding * 2.0

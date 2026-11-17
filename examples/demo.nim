@@ -10,6 +10,7 @@ import std/os
 import ogimage
 
 const photoFile = "1230420.jpeg"
+const bgPhotoFile = "pexels-marie-gaebel-2164524425-40393792.jpeg"
 const boldFile = "Roboto-Bold.ttf"
 const regularFile = "Roboto-Regular.ttf"
 
@@ -151,6 +152,26 @@ proc main(outDir, dataDir: string) =
   missing.repoIconLight = "/nonexistent/light.png"
   missing.savePng(outDir / "og_missing.png")
   echo "wrote " & outDir / "og_missing.png"
+  for (name, fit, pos) in [("bg_cover", bgCover, bgPosCenter()),
+      ("bg_contain", bgContain, bgPosCenter()),
+      ("bg_fill", bgFill, bgPosCenter()),
+      ("bg_pos", bgCover, bgPosPx(0.0, 0.0))]:
+    var og = sample(opDark, dataDir)
+    og.hasBackground = true
+    let bgPhoto = dataDir / bgPhotoFile
+    if fileExists(bgPhoto):
+      og.background = imageBackgroundEx(bgPhoto, fit, pos)
+    else:
+      echo "warning: bg photo not found: " & bgPhoto & " (solid fallback)"
+      og.background = solidBackground(rgb(30, 27, 75))
+    og.savePng(outDir / ("og_" & name & ".png"))
+    echo "wrote " & outDir / ("og_" & name & ".png")
+  var bgGrad = sample(opDark, dataDir)
+  bgGrad.hasBackground = true
+  bgGrad.background = gradientBackground(rgb(79, 70, 229),
+    rgb(124, 58, 237))
+  bgGrad.savePng(outDir / "og_bg_gradient.png")
+  echo "wrote " & outDir / "og_bg_gradient.png"
 
 when isMainModule:
   let (dataDir, defaultOut) = repoLayout()

@@ -15,6 +15,7 @@
 ## Features
 - Nim objects in, PNG out: build an `OgImage` value, call `savePng` or `encodePng`
 - Six named presets: dark, light, gradient, photo, minimal, brand
+- Background overrides: solid color, gradient, or image with cover/contain/fill and center (`bgPosCenter`) or px (`bgPosPx`) position
 - Fixed type sizes with ellipsis trimming (long copy ends in `...`, never overflows)
 - Photo avatar in the headline row (128x128, 20px rounded mask, cover-fit)
 - Repo footer with GitHub mark + handle, auto light/dark variant
@@ -48,6 +49,16 @@ og2.fontTitlePath = "/System/Library/Fonts/Supplemental/Arial Unicode.ttf"
 og2.fontBodyPath = "/System/Library/Fonts/Supplemental/Arial Unicode.ttf"
 og2.scale = 2.0
 og2.savePng("og_hebrew.png")
+
+# Background image with fit + position (cover/contain/fill, center or px):
+var og3 = newOgImage("Pure-Nim OpenGraph images in one call",
+  "Fixed sizes, ellipsis trimming, and named presets.",
+  opDark)
+og3.hasBackground = true
+og3.background = imageBackgroundEx(
+  "tests/data/pexels-marie-gaebel-2164524425-40393792.jpeg",
+  bgContain, bgPosCenter())
+og3.savePng("og_bg_contain.png")
 ```
 
 | dark | photo |
@@ -59,7 +70,8 @@ og2.savePng("og_hebrew.png")
 | ![russian](examples/out/og_russian.png) | ![hebrew](examples/out/og_hebrew.png) |
 
 More cards (light, gradient, minimal, brand, long-copy ellipsis, missing-asset
-placeholders, retina) are rendered by `examples/demo.nim` into `examples/out/`.
+placeholders, retina, background cover/contain/fill/position/gradient) are rendered by
+`examples/demo.nim` into `examples/out/`.
 
 ### ❤ Contributions & Support
 - 🐛 Found a bug? [Create a new Issue](https://github.com/nimbase/ogimage/issues)

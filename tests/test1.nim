@@ -40,6 +40,14 @@ suite "ogimage construction":
     check gradientBackground(rgb(0, 0, 0), rgb(1, 1, 1)).kind == bgGradient
     check imageBackground("x.png").kind == bgImage
     check imageBackground("x.png").overlayAlpha == 0.55
+    check imageBackground("x.png").fit == bgCover
+    check imageBackground("x.png").pos.centered
+    check imageBackgroundEx("x.png", bgContain,
+      bgPosPx(10.0, 20.0)).fit == bgContain
+    let p = imageBackgroundEx("x.png", bgCover, bgPosPx(10.0, 20.0)).pos
+    check not p.centered
+    check p.x == 10.0
+    check p.y == 20.0
 
 suite "ogimage themes":
   test "presets resolve distinct pages":
@@ -114,6 +122,30 @@ suite "ogimage render":
     check encodePng(og).len > 100
     og.background = imageBackground("/nonexistent/bg.png")
     check encodePng(og).len > 100
+    og.background = imageBackground("tests/data/1230420.jpeg")
+    check encodePng(og).len > 100
+    og.background = imageBackgroundEx("tests/data/1230420.jpeg",
+      bgContain)
+    check encodePng(og).len > 100
+    og.background = imageBackgroundEx("tests/data/1230420.jpeg", bgFill)
+    check encodePng(og).len > 100
+    og.background = imageBackgroundEx("tests/data/1230420.jpeg",
+      bgCover, bgPosPx(0.0, 0.0))
+    check encodePng(og).len > 100
+
+  test "background fit and position change the output":
+    proc bgOg(fit: OgBgFit, pos: OgBgPos): OgImage =
+      result = makeOg()
+      result.hasBackground = true
+      result.background = imageBackgroundEx("tests/data/1230420.jpeg",
+        fit, pos, overlayAlpha = 0.0)
+    let cover = encodePng(bgOg(bgCover, bgPosCenter()))
+    let contain = encodePng(bgOg(bgContain, bgPosCenter()))
+    let fill = encodePng(bgOg(bgFill, bgPosCenter()))
+    let shifted = encodePng(bgOg(bgCover, bgPosPx(0.0, 0.0)))
+    check cover != contain
+    check cover != fill
+    check cover != shifted
 
   test "missing logo is skipped, not fatal":
     var og = makeOg()

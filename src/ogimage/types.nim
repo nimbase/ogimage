@@ -22,6 +22,27 @@ type
     opBrand
       ## Accent-driven gradient, white ink, centered.
 
+  OgBgFit* = enum
+    bgCover
+      ## Scale to fill the canvas, cropping overflow
+      ## (CSS `background-size: cover`).
+    bgContain
+      ## Scale to fit inside the canvas, letterboxing on the
+      ## preset page color (CSS `background-size: contain`).
+    bgFill
+      ## Stretch to the exact canvas size, ignoring aspect ratio.
+
+  OgBgPos* = object
+    ## Where to place the background image. Either centered on
+    ## both axes (`center center`) or an explicit top-left origin
+    ## in user units (`px px`).
+    case centered*: bool
+    of true:
+      discard
+    of false:
+      x*: float64
+      y*: float64
+
   OgBackgroundKind* = enum
     bgSolid
     bgGradient
@@ -42,6 +63,8 @@ type
       path*: string
       tint*: Color
       overlayAlpha*: float64
+      fit*: OgBgFit
+      pos*: OgBgPos
 
   OgContent* = object
     title*: string
@@ -130,6 +153,14 @@ type
 
   OgError* = object of CatchableError
 
+proc bgPosCenter*(): OgBgPos =
+  ## Centered on both axes (`center center`).
+  OgBgPos(centered: true)
+
+proc bgPosPx*(x, y: float64): OgBgPos =
+  ## Explicit top-left origin in user units (`px px`).
+  OgBgPos(centered: false, x: x, y: y)
+
 proc solidBackground*(c: Color): OgBackground =
   OgBackground(kind: bgSolid, color: c)
 
@@ -140,8 +171,19 @@ proc gradientBackground*(fromColor, toColor: Color,
 
 proc imageBackground*(path: string, overlayAlpha = 0.55,
     tint = rgbf(0, 0, 0)): OgBackground =
+  ## Cover-fit, centered. For fit/position control use
+  ## `imageBackgroundEx`.
   OgBackground(kind: bgImage, path: path, tint: tint,
-    overlayAlpha: overlayAlpha)
+    overlayAlpha: overlayAlpha, fit: bgCover, pos: bgPosCenter())
+
+proc imageBackgroundEx*(path: string, fit = bgCover,
+    pos = bgPosCenter(), overlayAlpha = 0.55,
+    tint = rgbf(0, 0, 0)): OgBackground =
+  ## Full background-image control: `fit` selects cover (fill +
+  ## crop), contain (fit inside + letterbox), or fill (stretch);
+  ## `pos` is `bgPosCenter()` or `bgPosPx(x, y)`.
+  OgBackground(kind: bgImage, path: path, tint: tint,
+    overlayAlpha: overlayAlpha, fit: fit, pos: pos)
 
 proc newOgImage*(title, description: string,
     preset = opDark): OgImage =
