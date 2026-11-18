@@ -20,6 +20,7 @@
 - Fixed type sizes with ellipsis trimming (long copy ends in `...`, never overflows)
 - Photo avatar in the headline row (128x128, 20px rounded mask, cover-fit)
 - Generic footer stats: icon + label items (handles, counters, captions) in one NVG flex row, auto dark/light icon variant
+- Custom layouts: `layout` rows/columns compute absolute boxes, `newCustomCanvas` opens a blank canvas, and `drawBackground`/spans/`ellipsizeToLines` stay reusable — see `examples/custom.nim`
 - Labeled gray placeholders (`128x128`, ...) wherever an image fails to load
 - Retina output via `scale = 2.0` (2400x1260, same layout, same code)
 - Cyrillic, RTL Hebrew (with right alignment), and fallback fonts
@@ -87,7 +88,13 @@ og4.savePng("og_rich.png")
 
 More cards (light, gradient, minimal, brand, long-copy ellipsis, missing-asset
 placeholders, retina, background cover/contain/fill/position/gradient) are rendered by
-`examples/demo.nim` into `examples/out/`.
+`examples/demo.nim` into `examples/out/`. A custom split-hero layout (text column +
+full-height image panel on a raw canvas) is rendered by `examples/custom.nim`
+into `examples/out/og_custom.png`:
+
+| custom |
+| ------ |
+| ![custom](examples/out/og_custom.png) |
 
 ### ❤ Contributions & Support
 - 🐛 Found a bug? [Create a new Issue](https://github.com/nimbase/ogimage/issues)

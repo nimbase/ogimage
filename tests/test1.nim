@@ -365,3 +365,44 @@ suite "ogimage render":
     og.savePng(path)
     check fileExists(path)
     check getFileSize(path) > 100
+
+suite "ogimage layout":
+  test "inset shrinks on all sides":
+    let b = ogBox(0, 0, 1200, 630).inset(80.0, 62.0)
+    check b.x == 80.0
+    check b.y == 62.0
+    check b.w == 1040.0
+    check b.h == 506.0
+    check ogBox(0, 0, 10, 10).inset(80.0).w == 0.0
+
+  test "splitRow places absolute cells left to right":
+    let cols = ogBox(0, 0, 1200, 630).splitRow(@[720.0, 480.0])
+    check cols.len == 2
+    check cols[0] == ogBox(0, 0, 720.0, 630)
+    check cols[1] == ogBox(720.0, 0, 480.0, 630)
+    let gapped = ogBox(0, 0, 100, 50).splitRow(@[30.0, 40.0],
+      gap = 10.0)
+    check gapped[0].x == 0.0
+    check gapped[1].x == 40.0
+
+  test "splitColumn stacks absolute cells top to bottom":
+    let rows = ogBox(80, 62, 560, 506).splitColumn(
+      @[44.0, 260.0, 100.0, 36.0], gap = 22.0)
+    check rows.len == 4
+    check rows[0].y == 62.0
+    check rows[1].y == 62.0 + 44.0 + 22.0
+    check rows[3].y + rows[3].h == 62.0 + 506.0
+    for r in rows:
+      check r.x == 80.0
+      check r.w == 560.0
+
+  test "flex splits share space proportionally":
+    let cols = ogBox(0, 0, 1200, 630).splitRowFlex(@[3.0, 2.0])
+    check cols.len == 2
+    check abs(cols[0].w - 720.0) < 1e-9
+    check abs(cols[1].w - 480.0) < 1e-9
+    check cols[1].x == cols[0].x + cols[0].w
+    let rows = ogBox(0, 0, 100, 106).splitColumnFlex(
+      @[1.0, 1.0], gap = 6.0)
+    check abs(rows[0].h - 50.0) < 1e-9
+    check abs(rows[1].y - 56.0) < 1e-9

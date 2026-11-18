@@ -12,12 +12,14 @@
 
 import ./ogimage/types
 import ./ogimage/spans
+import ./ogimage/layout
 import ./ogimage/theme
 import ./ogimage/fonts
 import ./ogimage/render
 
 export types
 export spans
+export layout
 export theme
 export fonts
 export render

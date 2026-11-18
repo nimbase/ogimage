@@ -154,7 +154,7 @@ proc createFittedImage*(c: Canvas, path: string, dispW, dispH: float64,
     return c.createImageRGBA(d.w, d.h, flags, d.pixels)
   c.createImageRGBA(tw, th, flags, areaAverage(d.pixels, d.w, d.h, tw, th))
 
-proc drawBackground(c: Canvas, og: OgImage, th: OgTheme) =
+proc drawBackground*(c: Canvas, og: OgImage, th: OgTheme) =
   let W = float64(og.width)
   let H = float64(og.height)
   if og.hasBackground:
