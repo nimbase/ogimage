@@ -1,0 +1,21 @@
+nimTitle	spans	ogimage/spans.html	module ogimage/spans		0
+nim	OgSeg	ogimage/spans.html#OgSeg	object OgSeg		13
+nim	plain	ogimage/spans.html#plain,string	proc plain(s: string): OgSeg		25
+nim	strong	ogimage/spans.html#strong,string	proc strong(s: string): OgSeg		28
+nim	strong	ogimage/spans.html#strong,OgSeg	proc strong(s: OgSeg): OgSeg		31
+nim	em	ogimage/spans.html#em,string	proc em(s: string): OgSeg		35
+nim	em	ogimage/spans.html#em,OgSeg	proc em(s: OgSeg): OgSeg		38
+nim	fg	ogimage/spans.html#fg,string,Color	proc fg(s: string; color: Color): OgSeg		42
+nim	fg	ogimage/spans.html#fg,OgSeg,Color	proc fg(s: OgSeg; color: Color): OgSeg		45
+nim	bg	ogimage/spans.html#bg,string,Color	proc bg(s: string; color: Color): OgSeg		50
+nim	bg	ogimage/spans.html#bg,OgSeg,Color	proc bg(s: OgSeg; color: Color): OgSeg		53
+nim	link	ogimage/spans.html#link,string,string	proc link(s: string; url: string): OgSeg		58
+nim	link	ogimage/spans.html#link,OgSeg,string	proc link(s: OgSeg; url: string): OgSeg		61
+nim	segmentsText	ogimage/spans.html#segmentsText,openArray[OgSeg]	proc segmentsText(segs: openArray[OgSeg]): string		65
+nim	toTextSpans	ogimage/spans.html#toTextSpans,openArray[OgSeg],TextFont,TextFont,Color	proc toTextSpans(segs: openArray[OgSeg]; strongF, emF: TextFont; accent: Color): tuple[\n    text: string, spans: seq[TextSpan],\n    bgs: seq[tuple[first, last: int, color: Color]]]		74
+nim	trimSegs	ogimage/spans.html#trimSegs,openArray[OgSeg],int	proc trimSegs(segs: openArray[OgSeg]; maxBytes: int): seq[OgSeg]		110
+nimgrp	fg	ogimage/spans.html#fg-procs-all	proc		42
+nimgrp	link	ogimage/spans.html#link-procs-all	proc		58
+nimgrp	strong	ogimage/spans.html#strong-procs-all	proc		28
+nimgrp	em	ogimage/spans.html#em-procs-all	proc		35
+nimgrp	bg	ogimage/spans.html#bg-procs-all	proc		50

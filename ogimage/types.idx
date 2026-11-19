@@ -1,0 +1,33 @@
+nimTitle	types	ogimage/types.html	module ogimage/types		0
+nim	opDark	ogimage/types.html#opDark	OgPreset.opDark		13
+nim	opLight	ogimage/types.html#opLight	OgPreset.opLight		13
+nim	opGradient	ogimage/types.html#opGradient	OgPreset.opGradient		13
+nim	opPhoto	ogimage/types.html#opPhoto	OgPreset.opPhoto		13
+nim	opMinimal	ogimage/types.html#opMinimal	OgPreset.opMinimal		13
+nim	opBrand	ogimage/types.html#opBrand	OgPreset.opBrand		13
+nim	OgPreset	ogimage/types.html#OgPreset	enum OgPreset		13
+nim	bgCover	ogimage/types.html#bgCover	OgBgFit.bgCover		27
+nim	bgContain	ogimage/types.html#bgContain	OgBgFit.bgContain		27
+nim	bgFill	ogimage/types.html#bgFill	OgBgFit.bgFill		27
+nim	OgBgFit	ogimage/types.html#OgBgFit	enum OgBgFit		27
+nim	OgBgPos	ogimage/types.html#OgBgPos	object OgBgPos		37
+nim	bgSolid	ogimage/types.html#bgSolid	OgBackgroundKind.bgSolid		48
+nim	bgGradient	ogimage/types.html#bgGradient	OgBackgroundKind.bgGradient		48
+nim	bgImage	ogimage/types.html#bgImage	OgBackgroundKind.bgImage		48
+nim	OgBackgroundKind	ogimage/types.html#OgBackgroundKind	enum OgBackgroundKind		48
+nim	OgBackground	ogimage/types.html#OgBackground	object OgBackground		53
+nim	OgFooterItem	ogimage/types.html#OgFooterItem	object OgFooterItem		76
+nim	OgContent	ogimage/types.html#OgContent	object OgContent		87
+nim	OgTheme	ogimage/types.html#OgTheme	object OgTheme		113
+nim	OgImage	ogimage/types.html#OgImage	object OgImage		139
+nim	OgError	ogimage/types.html#OgError	object OgError		180
+nim	footerItem	ogimage/types.html#footerItem,string,string,string	proc footerItem(label: string; iconDark = ""; iconLight = ""): OgFooterItem		182
+nim	bgPosCenter	ogimage/types.html#bgPosCenter	proc bgPosCenter(): OgBgPos		190
+nim	bgPosPx	ogimage/types.html#bgPosPx,float64,float64	proc bgPosPx(x, y: float64): OgBgPos		194
+nim	solidBackground	ogimage/types.html#solidBackground,Color	proc solidBackground(c: Color): OgBackground		198
+nim	gradientBackground	ogimage/types.html#gradientBackground,Color,Color,float	proc gradientBackground(fromColor, toColor: Color; angleDeg = 135.0): OgBackground		201
+nim	imageBackground	ogimage/types.html#imageBackground,string,float	proc imageBackground(path: string; overlayAlpha = 0.55; tint = rgbf(0, 0, 0)): OgBackground		206
+nim	imageBackgroundEx	ogimage/types.html#imageBackgroundEx,string,float,float	proc imageBackgroundEx(path: string; fit = bgCover; pos = bgPosCenter();\n                  overlayAlpha = 0.55; tint = rgbf(0, 0, 0);\n                  overlayAngleDeg = -90.0): OgBackground		215
+nim	newOgImage	ogimage/types.html#newOgImage,string,string	proc newOgImage(title, description: string; preset = opDark): OgImage		227
+nim	newOgImage	ogimage/types.html#newOgImage,seq[OgSeg],seq[OgSeg]	proc newOgImage(titleSegs, descSegs: seq[OgSeg]; preset = opDark): OgImage		235
+nimgrp	newogimage	ogimage/types.html#newOgImage-procs-all	proc		227

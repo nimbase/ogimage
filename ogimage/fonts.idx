@@ -1,0 +1,8 @@
+nimTitle	fonts	ogimage/fonts.html	module ogimage/fonts		0
+nim	defaultTitleCandidates	ogimage/fonts.html#defaultTitleCandidates	proc defaultTitleCandidates(): seq[string]		15
+nim	defaultBodyCandidates	ogimage/fonts.html#defaultBodyCandidates	proc defaultBodyCandidates(): seq[string]		30
+nim	resolveTitlePath	ogimage/fonts.html#resolveTitlePath,OgImage	proc resolveTitlePath(og: OgImage): string		43
+nim	resolveBodyPath	ogimage/fonts.html#resolveBodyPath,OgImage	proc resolveBodyPath(og: OgImage): string		59
+nim	loadFace	ogimage/fonts.html#loadFace,string,int	proc loadFace(path: string; faceIndex = 0): TextFont		79
+nim	ensureFallbacks	ogimage/fonts.html#ensureFallbacks,Canvas,openArray[string]	proc ensureFallbacks(c: Canvas; paths: openArray[string])		91
+nim	ensureFonts	ogimage/fonts.html#ensureFonts,Canvas,OgImage	proc ensureFonts(c: Canvas; og: OgImage): tuple[titleId, bodyId: int]		121

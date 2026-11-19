@@ -1,0 +1,11 @@
+nimTitle	render	ogimage/render.html	module ogimage/render		0
+nim	createFittedImage	ogimage/render.html#createFittedImage,Canvas,string,float64,float64,float,set[ImageFlag]	proc createFittedImage(c: Canvas; path: string; dispW, dispH: float64; factor = 2.0;\n                  flags: set[ImageFlag] = {}): int		133
+nim	drawBackground	ogimage/render.html#drawBackground,Canvas,OgImage,OgTheme	proc drawBackground(c: Canvas; og: OgImage; th: OgTheme)		157
+nim	drawDecor	ogimage/render.html#drawDecor,Canvas,OgImage,OgTheme	proc drawDecor(c: Canvas; og: OgImage; th: OgTheme)		217
+nim	ellipsizeToLines	ogimage/render.html#ellipsizeToLines,Canvas,string,TextBoxOpts	proc ellipsizeToLines(c: Canvas; s: string; o: TextBoxOpts): string		251
+nim	photoSize	ogimage/render.html#photoSize	const photoSize		359
+nim	photoRadius	ogimage/render.html#photoRadius	const photoRadius		361
+nim	photoGap	ogimage/render.html#photoGap	const photoGap		363
+nim	render	ogimage/render.html#render,OgImage	proc render(og: OgImage): Canvas		575
+nim	savePng	ogimage/render.html#savePng,OgImage,string	proc savePng(og: OgImage; path: string)		648
+nim	encodePng	ogimage/render.html#encodePng,OgImage	proc encodePng(og: OgImage): seq[uint8]		652

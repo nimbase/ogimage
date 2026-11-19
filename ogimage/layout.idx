@@ -1,0 +1,11 @@
+nimTitle	layout	ogimage/layout.html	module ogimage/layout		0
+nim	OgBox	ogimage/layout.html#OgBox	object OgBox		13
+nim	ogBox	ogimage/layout.html#ogBox,float64,float64,float64,float64	proc ogBox(x, y, w, h: float64): OgBox		17
+nim	inset	ogimage/layout.html#inset,OgBox,float64	proc inset(b: OgBox; pad: float64): OgBox		21
+nim	inset	ogimage/layout.html#inset,OgBox,float64,float64	proc inset(b: OgBox; dx, dy: float64): OgBox		26
+nim	splitRow	ogimage/layout.html#splitRow,OgBox,openArray[float64],float	proc splitRow(b: OgBox; widths: openArray[float64]; gap = 0.0): seq[OgBox]		31
+nim	splitRowFlex	ogimage/layout.html#splitRowFlex,OgBox,openArray[float64],float	proc splitRowFlex(b: OgBox; weights: openArray[float64]; gap = 0.0): seq[OgBox]		42
+nim	splitColumn	ogimage/layout.html#splitColumn,OgBox,openArray[float64],float	proc splitColumn(b: OgBox; heights: openArray[float64]; gap = 0.0): seq[OgBox]		61
+nim	splitColumnFlex	ogimage/layout.html#splitColumnFlex,OgBox,openArray[float64],float	proc splitColumnFlex(b: OgBox; weights: openArray[float64]; gap = 0.0): seq[OgBox]		72
+nim	newCustomCanvas	ogimage/layout.html#newCustomCanvas,int,int,float	proc newCustomCanvas(w, h: int; scale = 1.0): Canvas		91
+nimgrp	inset	ogimage/layout.html#inset-procs-all	proc		21

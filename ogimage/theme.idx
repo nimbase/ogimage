@@ -1,0 +1,3 @@
+nimTitle	theme	ogimage/theme.html	module ogimage/theme		0
+nim	defaultAccent	ogimage/theme.html#defaultAccent,OgPreset	proc defaultAccent(preset: OgPreset): Color		10
+nim	themeForPreset	ogimage/theme.html#themeForPreset,OgPreset,Color,bool	proc themeForPreset(preset: OgPreset; accent: Color; hasAccent: bool): OgTheme		19
